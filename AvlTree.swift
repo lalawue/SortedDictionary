@@ -79,9 +79,6 @@ final public class AvlTree<K: Comparable, V> {
     
     private var root: AvlNode<K,V>?
 
-    private var tmp_sw = Int(0)
-    private var tmp_parent: AvlNode<K,V>? = nil
-
     private var size = Int(0)
     
     public func first() -> AvlNode<K,V>? {
