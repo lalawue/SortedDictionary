@@ -12,7 +12,7 @@ final public class SortedDictionary<K: Hashable & Comparable, V> {
     private var map = [K:AvlNode<K,V>]()
     
     /// O(logN) get/set/iterate
-    private let tree = AvlTree<K,V>()
+    private var tree = AvlTree<K,V>()
     
     /// get/set
     subscript(key: K) -> V? {
@@ -41,17 +41,22 @@ final public class SortedDictionary<K: Hashable & Comparable, V> {
 
     /// forEach with index
     public func forEach(reversed: Bool = false, _ body: (Int, K, V, inout Bool) throws -> Void) rethrows {
-        var index = reversed ? tree.count() : -1
-        let step = reversed ? -1 : 1
+        var index = -1
         var next = reversed ? tree.last() : tree.first()
         var stop = false
         while let n = next {
-            index += step
+            index += 1
             try body(index, n.key, n.value!, &stop)
             if stop {
                 break
             }
             next = reversed ? n.prev() : n.next()
         }
+    }
+    
+    /// remove all
+    public func removeAll() {
+        map = [K:AvlNode<K,V>]()
+        tree = AvlTree<K,V>()
     }
 }
