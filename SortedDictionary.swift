@@ -4,7 +4,7 @@
 
 import Foundation
 
-/** AVL tree sorted Key/Value Dictionary
+/** AVL tree sorted Key/Value Dictionary, speed up sorting time for Dictionary
  */
 final public class SortedDictionary<K: Hashable & Comparable, V> {
 
@@ -58,5 +58,20 @@ final public class SortedDictionary<K: Hashable & Comparable, V> {
     public func removeAll() {
         map = [K:AvlNode<K,V>]()
         tree = AvlTree<K,V>()
+    }
+    
+    /// minimal key
+    public var miniKey: K? {
+        return tree.first()?.key
+    }
+    
+    /// maxima key
+    public var maxKey: K? {
+        return tree.last()?.key
+    }
+    
+    /// count
+    public var count: Int {
+        return tree.count()
     }
 }
