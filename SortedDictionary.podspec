@@ -39,4 +39,6 @@ Sorted Dictionary base on AVL tree, you can sorted by dictionary key or value
   # s.public_header_files = 'Pod/Classes/**/*.h'
   # s.frameworks = 'UIKit', 'MapKit'
   # s.dependency 'AFNetworking', '~> 2.3'
+
+  spec.swift_version = '5'
 end
