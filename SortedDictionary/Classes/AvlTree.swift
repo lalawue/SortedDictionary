@@ -9,20 +9,20 @@ public class AvlNode<K:Hashable, P:Comparable, V> {
     fileprivate var right: AvlNode<K,P,V>? = nil
     fileprivate weak var parent: AvlNode<K,P,V>? = nil
     fileprivate var height: Int = 0
-    fileprivate var val: V?
+    fileprivate var val: V
     
     /// dictionary key
     public let key: K
     
-    /// sorted key
-    public let priority: P
-    
     /// dictionary value
-    public var value: V? {
+    public var value: V {
         return val
     }
     
-    fileprivate init(key: K, value: V? = nil, priority: P) {
+    /// sorted key
+    let priority: P    
+    
+    fileprivate init(key: K, value: V, priority: P) {
         self.key = key
         self.priority = priority
         self.val = value
@@ -32,7 +32,7 @@ public class AvlNode<K:Hashable, P:Comparable, V> {
         return lhs.priority == rhs.priority
     }
     
-    func replace(value: V?) {
+    func replace(value: V) {
         val = value
     }
     
@@ -88,6 +88,7 @@ class AvlTree<K:Hashable, P:Comparable, V> {
 
     private var size = Int(0)
     
+    /// minimal
     public func first() -> AvlNode<K,P,V>? {
         guard var node = root else {
             return nil
@@ -98,6 +99,7 @@ class AvlTree<K:Hashable, P:Comparable, V> {
         return node
     }
     
+    /// maximal
     func last() -> AvlNode<K,P,V>? {
         guard var node = root else {
             return nil
@@ -108,33 +110,16 @@ class AvlTree<K:Hashable, P:Comparable, V> {
         return node
     }
     
-    func find(nkey: P) -> AvlNode<K,P,V>? {
-        var next = root
-        while let node = next {
-            if node.priority == nkey {
-                return node
-            }
-            if node.priority < nkey {
-                next = node.right
-            } else {
-                next = node.left
-            }
-        }
-        return nil
-    }
-    
     /// replace original
     @discardableResult
-    func insert(key: K, value: V?, priority: P, replace: Bool = false) -> AvlNode<K,P,V> {
+    func insert(key: K, value: V, priority: P) -> AvlNode<K,P,V> {
         var link = root
         var parent: AvlNode<K,P,V>? = nil
         var left = false
         while link != nil {
             parent = link!
             if parent!.priority == priority {
-                if replace {
-                    parent!.val = value
-                }
+                parent!.val = value
                 return parent!
             }
             left = parent!.priority > priority
@@ -158,14 +143,6 @@ class AvlTree<K:Hashable, P:Comparable, V> {
         postInsert(node: node)
         size += 1
         return node
-    }
-    
-    @discardableResult
-    func remove(key: P) -> V? {
-        if let node = find(nkey: key) {
-            return remove(node: node)
-        }
-        return nil
     }
     
     @discardableResult

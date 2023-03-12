@@ -7,22 +7,24 @@ import Foundation
 /// Dictionary base AVL tree, you can sorted by dictionary key or value
 /// - K: hashable key for dictionary
 /// - P: comparable priority for AVL tree node
-/// - V:  value for dictionary
+/// - V: value for dictionary
 open class SortedDictionary<K:Hashable, P:Comparable, V> {
+    
+    public typealias KeyValue = AvlNode<K,P,V>
 
     /// O(1) get/set
-    private var map = [K:AvlNode<K,P,V>]()
+    private var map = [K:KeyValue]()
     
     /// O(logN) get/set/iterate
     private var tree = AvlTree<K,P,V>()
     
-    /// minimal value
-    open var miniOne: AvlNode<K,P,V>? {
+    /// minimal
+    open var first: KeyValue? {
         return tree.first()
     }
 
-    /// maxima value
-    open var maxOne: AvlNode<K,P,V>? {
+    /// maxima
+    open var last: KeyValue? {
         return tree.last()
     }
     
@@ -41,18 +43,20 @@ open class SortedDictionary<K:Hashable, P:Comparable, V> {
     /// get/set
     open subscript(_ key: K) -> V? {
         get {
-            if let node = map[key] {
-                return node.value
-            }
-            return nil
+            return map[key]?.value
         }
         set {
             if let `newValue` = newValue {
+                let npri = self.priorityFn(key, newValue)
                 if let node = map[key] {
-                    node.replace(value: newValue)
+                    if node.priority == npri {
+                        node.replace(value: newValue)
+                    } else {
+                        tree.remove(node: node)
+                        map[key] = tree.insert(key: key, value: newValue, priority: npri)
+                    }
                 } else {
-                    let node = tree.insert(key: key, value: newValue, priority: priorityFn(key, newValue), replace: true)
-                    map[key] = node
+                    map[key] = tree.insert(key: key, value: newValue, priority: npri)
                 }
             } else {
                 if let node = map[key] {
@@ -64,39 +68,40 @@ open class SortedDictionary<K:Hashable, P:Comparable, V> {
     }
 
     /// forEach with index from '0'
-    open func forEach(reversed: Bool = false, _ body: (Int, K, V, inout Bool) throws -> Void) rethrows {
-        var index = -1
-        var next = reversed ? tree.last() : tree.first()
-        var stop = false
-        while let n = next {
-            index += 1
-            try body(index, n.key, n.value!, &stop)
-            if stop {
-                break
-            }
-            next = reversed ? n.prev() : n.next()
+    open func forEach(reversed: Bool = false, _ body: (Int, KeyValue) throws -> Void) rethrows {
+        let it = makeIterator(reversed: reversed)
+        while let n = it.next() {
+            try body(it.index, n)
         }
     }
 
-    /// return prefix keys, no more than count
-    open func prefixKeys(reversed: Bool = false, count: Int = Int.max) -> [K] {
-        let count = min(count, self.count)
-        var array = [K]()
-        forEach(reversed: reversed, { index, mkey, _, stop in
-            array.append(mkey)
-            stop = (index + 1) >= count
-        })
+    /// return prefix KeyValue, no more than count
+    open func prefix(_ maxLength: Int = Int.max) -> [KeyValue] {
+        var array = [AvlNode<K,P,V>]()
+        if maxLength > 0 {
+            let it = makeIterator()
+            while let n = it.next() {
+                array.append(n)
+                if it.index + 1 >= maxLength {
+                    break
+                }
+            }
+        }
         return array
     }
     
-    /// return prefix values, no more than count
-    open func prefixValues(reversed: Bool = false, count: Int = Int.max) -> [V] {
-        let count = min(count, self.count)
-        var array = [V]()
-        forEach(reversed: reversed, { index, _, value, stop in
-            array.append(value)
-            stop = (index + 1) >= count
-        })
+    /// return prefix KeyValue, no more than count
+    open func suffix(_ maxLength: Int = Int.max) -> [KeyValue] {
+        var array = [AvlNode<K,P,V>]()
+        if maxLength > 0 {
+            let it = makeIterator(reversed: true)
+            while let n = it.next() {
+                array.append(n)
+                if it.index + 1 >= maxLength {
+                    break
+                }
+            }
+        }
         return array
     }
     
@@ -112,21 +117,33 @@ open class SortedDictionary<K:Hashable, P:Comparable, V> {
     }
 }
 
-///
+/// sorted dictionary iterator
 public class SortedDictionaryIterator<K:Hashable, P:Comparable, V>: IteratorProtocol {
     
-    public typealias Element = AvlNode<K,P,V>
-    var reversed: Bool
-    var node: AvlNode<K,P,V>?
+    public typealias Element = SortedDictionary<K,P,V>.KeyValue
+    
+    public var reversed: Bool {
+        return _reversed
+    }
+    
+    public var index: Int {
+        return _index
+    }
+
+    var _node: Element?
+    var _reversed: Bool
+    var _index: Int
 
     fileprivate init(tree: AvlTree<K,P,V>, reversed: Bool = false) {
-        self.reversed = reversed
-        self.node = reversed ? tree.last() : tree.first()
+        self._reversed = reversed
+        self._index = -1
+        self._node = reversed ? tree.last() : tree.first()
     }
     
     public func next() -> Element? {
-        let nnode = node
-        node = reversed ? nnode?.prev() : nnode?.next()
+        let nnode = _node
+        _node = _reversed ? nnode?.prev() : nnode?.next()
+        _index += 1
         return nnode
     }
 }

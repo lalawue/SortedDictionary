@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'SortedDictionary'
-  s.version          = '0.2.20230318'
+  s.version          = '0.3.20230312'
   s.summary          = 'Sorted Dictionary'
 
 # This description is used to generate tags and improve search results.
@@ -24,7 +24,7 @@ Sorted Dictionary base on AVL tree, you can sorted by dictionary key or value
   s.homepage         = 'https://github.com/lalawue/SortedDictionary'
   # s.screenshots     = 'www.example.com/screenshots_1', 'www.example.com/screenshots_2'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
-  s.author           = { 'lalawue' => 'suchaaa@gmail.com' }
+  s.author           = "lalawue"
   s.source           = { :git => 'https://github.com/lalawue/SortedDictionary.git', :tag => s.version.to_s }
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 

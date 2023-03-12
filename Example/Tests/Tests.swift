@@ -4,7 +4,7 @@ import SortedDictionary
 
 protocol TestUnit: AnyObject {
     func set(_ key: Int, _ value: Int?)
-    func prefix(count: Int) -> [Int]
+    func prefix(_ count: Int) -> [Int]
     func count() -> Int
 }
 
@@ -13,7 +13,7 @@ class UnitDict: TestUnit {
     func set(_ key: Int, _ value: Int?) {
         dict[key] = value
     }
-    func prefix(count: Int) -> [Int] {
+    func prefix(_ count: Int) -> [Int] {
         return dict.sorted() { $0.key < $1.key }.prefix(count).map { $0.value }
     }
     func count() -> Int {
@@ -28,8 +28,8 @@ class UnitSD: TestUnit {
     func set(_ key: Int, _ value: Int?) {
         map[key] = value
     }
-    func prefix(count: Int) -> [Int] {
-        return map.prefixValues(count: count)
+    func prefix(_ count: Int) -> [Int] {
+        return map.prefix(count).map({ $0.value })
     }
     func count() -> Int {
         return map.count
@@ -76,7 +76,7 @@ class MyTest {
                     an = 0
                 }
                 
-                let result = container.prefix(count: prefix)
+                let result = container.prefix(prefix)
                 var index = Int(0)
                 var rn = Int(0)
                 while index < prefix {
@@ -128,51 +128,82 @@ class Tests: XCTestCase {
         XCTAssertEqual(dict["3"]!, 3)
         XCTAssertEqual(dict["9999"]!, 9999)
         
-        XCTAssertEqual(dict.miniOne!.key, "1")
-        XCTAssertEqual(dict.miniOne!.priority, 1)
-        XCTAssertEqual(dict.miniOne!.value, 1)
+        XCTAssertEqual(dict.first!.key, "1")
+        XCTAssertEqual(dict.first!.value, 1)
         
-        XCTAssertEqual(dict.maxOne!.key, "10000")
-        XCTAssertEqual(dict.maxOne!.priority, 10000)
-        XCTAssertEqual(dict.maxOne!.value, 10000)
+        XCTAssertEqual(dict.last!.key, "10000")
+        XCTAssertEqual(dict.last!.value, 10000)
         
-        let fk = dict.prefixKeys(count: 10)
-        XCTAssertEqual(fk.count, 10)
-        XCTAssertEqual(fk.first!, "1")
-        XCTAssertEqual(fk.last!, "10")
-        
-        let lk = dict.prefixKeys(reversed: true, count: 10)
-        XCTAssertEqual(lk.count, 10)
-        XCTAssertEqual(lk.first!, "10000")
-        XCTAssertEqual(lk.last!, "9991")
-        
-        let fv = dict.prefixValues(count: 10)
-        XCTAssertEqual(fv.count, 10)
-        XCTAssertEqual(fv.first!, 1)
-        XCTAssertEqual(fv.last!, 10)
-        
-        let lv = dict.prefixValues(reversed: true, count: 10)
-        XCTAssertEqual(lv.count, 10)
-        XCTAssertEqual(lv.first!, 10000)
-        XCTAssertEqual(lv.last!, 9991)
-        
-        let fi = dict.makeIterator()
-        var index = Decimal(0)
-        
-        while let ni = fi.next() {
-            index += 1
-            XCTAssertEqual(ni.value, index)
+        do {
+            let fk = dict.prefix(10).map({ $0.key })
+            XCTAssertEqual(fk.count, 10)
+            XCTAssertEqual(fk.first!, "1")
+            XCTAssertEqual(fk.last!, "10")
         }
         
-        let li = dict.makeIterator(reversed: true)
-        index = Decimal(10001)
-        while let ni = li.next() {
-            index -= 1
-            XCTAssertEqual(ni.value, index)
+        do {
+            let lk = dict.suffix(10).map({ $0.key })
+            XCTAssertEqual(lk.count, 10)
+            XCTAssertEqual(lk.first!, "10000")
+            XCTAssertEqual(lk.last!, "9991")
         }
         
-        dict.removeAll()
-        XCTAssertEqual(dict.count, 0)
+        do {
+            let fv = dict.prefix(10).map({ $0.value })
+            XCTAssertEqual(fv.count, 10)
+            XCTAssertEqual(fv.first!, 1)
+            XCTAssertEqual(fv.last!, 10)
+        }
+        
+        do {
+            let lv = dict.suffix(10).map({ $0.value })
+            XCTAssertEqual(lv.count, 10)
+            XCTAssertEqual(lv.first!, 10000)
+            XCTAssertEqual(lv.last!, 9991)
+        }
+
+        do {
+            let fi = dict.makeIterator()
+            var index = Decimal(0)
+            while let n = fi.next() {
+                index += 1
+                XCTAssertEqual(n.value, index)
+            }
+        }
+        
+        do {
+            let li = dict.makeIterator(reversed: true)
+            var index = Decimal(10001)
+            while let n = li.next() {
+                index -= 1
+                XCTAssertEqual(n.value, index)
+            }
+        }
+        
+        do {
+            var array = [SortedDictionary<String,Decimal,Decimal>.KeyValue]()
+            let ff = dict.makeIterator(reversed: true)
+            while let n = ff.next() {
+                if ff.index >= 5000 {
+                    break
+                }
+                array.append(n)
+            }
+            XCTAssertEqual(array.count, 5000)
+            XCTAssertEqual(array.first!.value, 10000)
+            XCTAssertEqual(array.last!.value, 5001)
+        }
+        
+        do {
+            dict.forEach(reversed: true, { index, kv in
+                XCTAssertEqual(kv.value, Decimal(10000 - index))
+            })
+        }
+        
+        do {
+            dict.removeAll()
+            XCTAssertEqual(dict.count, 0)
+        }
     }
     
     func testCompare() {
