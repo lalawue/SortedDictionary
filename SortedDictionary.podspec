@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'SortedDictionary'
-  s.version          = '0.2.20230312'
+  s.version          = '0.2.20230318'
   s.summary          = 'Sorted Dictionary'
 
 # This description is used to generate tags and improve search results.
