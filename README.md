@@ -3,6 +3,14 @@
 
 Swift SortedDictionary base on AVL tree, insert O(logN)/ delete O(1) / find O(1) / sort O(logN), test under Swift 5.
 
+## Install
+
+To integrate `SortedDictionary` into your Xcode project using CocoaPods, specify it in your Podfile:
+
+```
+    pod 'SortedDictionary'
+```
+
 ## Test & Performance
 
 run Test in Example demo
