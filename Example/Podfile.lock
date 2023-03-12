@@ -1,0 +1,16 @@
+PODS:
+  - SortedDictionary (0.2.20230312)
+
+DEPENDENCIES:
+  - SortedDictionary (from `../`)
+
+EXTERNAL SOURCES:
+  SortedDictionary:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  SortedDictionary: 264a74e7bacf0f6e705f174fd17b73c6ae752f89
+
+PODFILE CHECKSUM: e64157014d2c8391ec7c91b6624eaaea6562cd6d
+
+COCOAPODS: 1.12.0

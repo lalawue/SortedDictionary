@@ -1,0 +1,13 @@
+use_frameworks!
+
+platform :ios, '9.0'
+
+target 'SortedDictionary_Example' do
+  pod 'SortedDictionary', :path => '../'
+
+  target 'SortedDictionary_Tests' do
+    inherit! :search_paths
+
+    
+  end
+end

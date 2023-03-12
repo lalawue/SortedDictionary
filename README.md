@@ -1,48 +1,11 @@
 
 # About
 
-Swift SortedDictionary with AVL tree as its sorted engine, insert O(logN)/ delete O(1) / find O(1) / sort O(logN), test under Swift 4.0.
+Swift SortedDictionary base on AVL tree, insert O(logN)/ delete O(1) / find O(1) / sort O(logN), test under Swift 5.
 
-# Usage
+## Test & Performance
 
-```swift
-// decleare
-let map = SortedDictionary<Int,Int>()
-
-// set 
-map[666] = 555 
-
-// get 
-let value = map[666] ?? nil
-
-// remove key
-map[555] = nil
-
-// count
-let count = map.count
-
-// minimal key
-let miniKey = map.miniKey ?? nil
-
-// maxima key
-let maxKey = map.maxKey ?? nil
-
-// for each
-map.forEach(reversed: false) { (key, index, value, stop)  in
-    // index always from 0 ..< count
-    // set stop = true when stop closure loop
-}
-
-// remove all
-map.removeAll()
-```
-
-# Test & Performance
-
-```bash
-$ make
-$ ./main
-```
+run Test in Example demo
 
 test and performance under
 
