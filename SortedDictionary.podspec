@@ -40,5 +40,5 @@ Sorted Dictionary base on AVL tree, you can sorted by dictionary key or value
   # s.frameworks = 'UIKit', 'MapKit'
   # s.dependency 'AFNetworking', '~> 2.3'
 
-  spec.swift_version = '5'
+  s.swift_version = '5'
 end
