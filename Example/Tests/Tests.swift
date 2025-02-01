@@ -183,8 +183,10 @@ class Tests: XCTestCase {
         do {
             var array = [SortedDictionary<String,Decimal,Decimal>.KeyValue]()
             let ff = dict.makeIterator(reversed: true)
+            var count = 0
             while let n = ff.next() {
-                if ff.index >= 5000 {
+                count += 1
+                if count >= 5000 {
                     break
                 }
                 array.append(n)
@@ -196,8 +198,17 @@ class Tests: XCTestCase {
         
         do {
             dict.forEach(reversed: true, { index, kv in
-                XCTAssertEqual(kv.value, Decimal(10000 - index))
+                XCTAssertEqual(kv.value, index)
+                return false
             })
+        }
+
+        do {
+            let n = dict.match(priority: 8000.5, compareFn: { priority, node in
+                let v = floor(priority)
+                return v - node.priority
+            })
+            XCTAssertEqual(n?.value ?? 0, 8000)
         }
         
         do {

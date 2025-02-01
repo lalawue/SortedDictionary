@@ -8,8 +8,8 @@
 
 Pod::Spec.new do |s|
   s.name             = 'SortedDictionary'
-  s.version          = '0.3.20230312'
-  s.summary          = 'Sorted Dictionary'
+  s.version          = '0.4.20250201'
+  s.summary          = 'Sorted Dictionary base on AVL tree, can sorted by key or value'
 
 # This description is used to generate tags and improve search results.
 #   * Think: What does it do? Why did you write it? What is the focus?

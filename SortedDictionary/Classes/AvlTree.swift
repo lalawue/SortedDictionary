@@ -20,7 +20,7 @@ public class AvlNode<K:Hashable, P:Comparable, V> {
     }
     
     /// sorted key
-    let priority: P    
+    public let priority: P
     
     fileprivate init(key: K, value: V, priority: P) {
         self.key = key
@@ -36,21 +36,22 @@ public class AvlNode<K:Hashable, P:Comparable, V> {
         val = value
     }
     
-    func next() -> AvlNode<K,P,V>? {
+    /// next node
+    public func next() -> AvlNode<K,P,V>? {
         var node = self
-        if node.right != nil {
-            node = node.right!
-            while node.left != nil {
-                node = node.left!
+        if let nr = node.right {
+            node = nr
+            while let nl = node.left {
+                node = nl
             }
         } else {
             while true {
                 let last = node
-                if node.parent == nil {
+                guard let np = node.parent else {
                     return nil
                 }
-                node = node.parent!
-                if node.left != nil && node.left! == last {
+                node = np
+                if let nl = node.left, nl == last {
                     break
                 }
             }
@@ -58,21 +59,22 @@ public class AvlNode<K:Hashable, P:Comparable, V> {
         return node
     }
     
-    func prev() -> AvlNode<K,P,V>? {
+    /// prev node
+    public func prev() -> AvlNode<K,P,V>? {
         var node = self
-        if node.left != nil {
-            node = node.left!
-            while node.right != nil {
-                node = node.right!
+        if let nl = node.left {
+            node = nl
+            while let nr = node.right {
+                node = nr
             }
         } else {
             while true {
                 let last = node
-                if node.parent == nil {
+                guard let np = node.parent else {
                     return nil
                 }
-                node = node.parent!
-                if node.right != nil && node.right! == last {
+                node = np
+                if let nr = node.right, nr == last {
                     break
                 }
             }
@@ -89,12 +91,12 @@ class AvlTree<K:Hashable, P:Comparable, V> {
     private var size = Int(0)
     
     /// minimal
-    public func first() -> AvlNode<K,P,V>? {
+    func first() -> AvlNode<K,P,V>? {
         guard var node = root else {
             return nil
         }
-        while node.left != nil {
-            node = node.left!
+        while let nl = node.left {
+            node = nl
         }
         return node
     }
@@ -104,8 +106,8 @@ class AvlTree<K:Hashable, P:Comparable, V> {
         guard var node = root else {
             return nil
         }
-        while node.right != nil {
-            node = node.right!
+        while let nr = node.right {
+            node = nr
         }
         return node
     }
@@ -116,29 +118,29 @@ class AvlTree<K:Hashable, P:Comparable, V> {
         var link = root
         var parent: AvlNode<K,P,V>? = nil
         var left = false
-        while link != nil {
-            parent = link!
-            if parent!.priority == priority {
-                parent!.val = value
-                return parent!
+        while let _link = link {
+            parent = _link
+            if _link.priority == priority {
+                _link.val = value
+                return _link
             }
-            left = parent!.priority > priority
+            left = _link.priority > priority
             if left {
-                link = parent!.left
+                link = _link.left
             } else {
-                link = parent!.right
+                link = _link.right
             }
         }
         let node = AvlNode(key: key, value: value, priority: priority)
         node.parent = parent
-        if parent == nil {
-            root = node
-        } else {
+        if let np = parent {
             if left {
-                parent!.left = node
+                np.left = node
             } else {
-                parent!.right = node
+                np.right = node
             }
+        } else {
+            root = node
         }
         postInsert(node: node)
         size += 1
@@ -150,19 +152,19 @@ class AvlTree<K:Hashable, P:Comparable, V> {
         let value = node.val
         var child: AvlNode<K,P,V>? = nil
         var parent: AvlNode<K,P,V>? = nil
-        if node.left != nil && node.right != nil {
+        if let nl = node.left, let nr = node.right {
             let old = node
-            var n = node.right!
-            while n.left != nil {
-                n = n.left!
+            var n = nr
+            while let _n = n.left {
+                n = _n
             }
             child = n.right
             parent = n.parent
-            if child != nil {
-                child!.parent = parent
+            if let _n = child {
+                _n.parent = parent
             }
             replaceChild(oldNode: n, newNode: child, parent: parent)
-            if n.parent != nil && n.parent! == old {
+            if let np = n.parent, np == old {
                 parent = n
             }
             n.left = old.left
@@ -170,9 +172,9 @@ class AvlTree<K:Hashable, P:Comparable, V> {
             n.parent = old.parent
             n.height = old.height
             replaceChild(oldNode: old, newNode: n, parent: old.parent)
-            old.left!.parent = n
-            if old.right != nil {
-                old.right!.parent = n
+            old.left?.parent = n
+            if let _n = old.right {
+                _n.parent = n
             }
         } else {
             if node.left == nil {
@@ -182,15 +184,35 @@ class AvlTree<K:Hashable, P:Comparable, V> {
             }
             parent = node.parent
             replaceChild(oldNode: node, newNode: child, parent: parent)
-            if child != nil {
-                child!.parent = parent
+            if let _n = child {
+                _n.parent = parent
             }
         }
-        if parent != nil {
-            reBalance(node: parent!)
+        if let np = parent {
+            reBalance(node: np)
         }
         size -= 1
         return value
+    }
+
+    func match(priority: P, compareFn: (priority: P, node: AvlNode<K,P,V>) -> Int)
+        -> AvlNode<K,P,V>?
+    {
+        guard self.size > 0 else {
+            return nil
+        }
+        var _match: AvlNode<K,P,V>? = root
+        while let n = _match {
+            let ret = compareFn(priority, n)
+            if ret == 0 {
+                return n
+            } else if ret < 0 {
+                _match = n.left
+            } else {
+                _match = n.right
+            }
+        }
+        return nil
     }
     
     func clear() {
@@ -207,11 +229,11 @@ class AvlTree<K:Hashable, P:Comparable, V> {
 extension AvlTree {
     
     private func leftHeight(node: AvlNode<K,P,V>) -> Int {
-        return node.left != nil ? node.left!.height : 0
+        return node.left?.height ?? 0
     }
     
     private func rightHeight(node: AvlNode<K,P,V>) -> Int {
-        return node.right != nil ? node.right!.height : 0
+        return node.right?.height ?? 0
     }
     
     private func replaceChild(oldNode: AvlNode<K,P,V>, newNode: AvlNode<K,P,V>?, parent: AvlNode<K,P,V>?) {
@@ -219,7 +241,7 @@ extension AvlTree {
             root = newNode
             return
         }
-        if (parent.left != nil && parent.left! == oldNode) {
+        if let pl = parent.left, pl == oldNode {
             parent.left = newNode
         } else {
             parent.right = newNode
@@ -230,8 +252,8 @@ extension AvlTree {
         let right = node.right!
         let parent = node.parent
         node.right = right.left
-        if right.left != nil {
-            right.left!.parent = node
+        if let _n = right.left {
+            _n.parent = node
         }
         right.left = node
         right.parent = parent
@@ -244,8 +266,8 @@ extension AvlTree {
         let left = node.left!
         let parent = node.parent
         node.left = left.right
-        if left.right != nil {
-            left.right!.parent = node
+        if let _n = left.right {
+            _n.parent = node
         }
         left.right = node
         left.parent = parent
@@ -292,22 +314,22 @@ extension AvlTree {
     
     private func reBalance(node: AvlNode<K,P,V>?) {
         var next = node
-        while next != nil {
-            let h0 = leftHeight(node: next!)
-            let h1 = rightHeight(node: next!)
+        while let n = next {
+            let h0 = leftHeight(node: n)
+            let h1 = rightHeight(node: n)
             let diff = h0 - h1
             let height = max(h0, h1) + 1
-            if next!.height != height {
-                next!.height = height
+            if n.height != height {
+                n.height = height
             } else if diff >= -1, diff <= 1 {
                 break
             }
             if diff <= -2 {
-                next = fixLeft(node: next!)
+                next = fixLeft(node: n)
             } else if diff >= 2 {
-                next = fixRight(node: next!)
+                next = fixRight(node: n)
             }
-            next = next!.parent
+            next = next?.parent
         }
     }
     

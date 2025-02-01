@@ -34,10 +34,10 @@ open class SortedDictionary<K:Hashable, P:Comparable, V> {
     }
     
     /// user defined from (key, value) -> sorted keys
-    let priorityFn: (K,V) -> P
+    private let sortedFn: (K, V) -> P
     
-    public init(sorted: @escaping (K,V) -> P) {
-        self.priorityFn = sorted
+    public init(sorted: @escaping (K, V) -> P) {
+        self.sortedFn = sorted
     }
     
     /// get/set
@@ -47,7 +47,7 @@ open class SortedDictionary<K:Hashable, P:Comparable, V> {
         }
         set {
             if let `newValue` = newValue {
-                let npri = self.priorityFn(key, newValue)
+                let npri = self.sortedFn(key, newValue)
                 if let node = map[key] {
                     if node.priority == npri {
                         node.replace(value: newValue)
@@ -68,10 +68,17 @@ open class SortedDictionary<K:Hashable, P:Comparable, V> {
     }
 
     /// forEach with index from '0'
-    open func forEach(reversed: Bool = false, _ body: (Int, KeyValue) throws -> Void) rethrows {
+    /// - reversed: true from last
+    /// - body() return true to stop looping
+    open func forEach(reversed: Bool = false, _ body: (Int, KeyValue) throws -> Bool) rethrows {
         let it = makeIterator(reversed: reversed)
+        var index = reversed ? tree.count() : -1
+        var step = reversed ? -1 : 1
         while let n = it.next() {
-            try body(it.index, n)
+            index += step
+            if try body(index, n) {
+                break
+            }
         }
     }
 
@@ -82,7 +89,7 @@ open class SortedDictionary<K:Hashable, P:Comparable, V> {
             let it = makeIterator()
             while let n = it.next() {
                 array.append(n)
-                if it.index + 1 >= maxLength {
+                if array.count >= maxLength {
                     break
                 }
             }
@@ -97,15 +104,24 @@ open class SortedDictionary<K:Hashable, P:Comparable, V> {
             let it = makeIterator(reversed: true)
             while let n = it.next() {
                 array.append(n)
-                if it.index + 1 >= maxLength {
+                if array.count >= maxLength {
                     break
                 }
             }
         }
         return array
     }
+
+    /// match node base on compare function
+    /// - compareFn: return -1, 0, 1 for priority less then, equal to, greater than node
+    open func match(priority: P, compareFn: (priority: P, node: AvlNode<K,P,V>) -> Int)
+        -> AvlNode<K,P,V>?
+    {
+        return tree.match(priority: priority, compareFn: compareFn)
+    }
     
     /// create iterator
+    /// - reversed: true from last
     open func makeIterator(reversed: Bool = false) -> SortedDictionaryIterator<K,P,V> {
         return SortedDictionaryIterator(tree: self.tree, reversed: reversed)
     }
@@ -113,37 +129,41 @@ open class SortedDictionary<K:Hashable, P:Comparable, V> {
     /// remove all
     open func removeAll() {
         map = [K:AvlNode<K,P,V>]()
-        tree = AvlTree<K,P,V>()
+        tree.clear()
     }
 }
 
 /// sorted dictionary iterator
-public class SortedDictionaryIterator<K:Hashable, P:Comparable, V>: IteratorProtocol {
+public class SortedDictionaryIterator<K:Hashable, P:Comparable, V>: Iteratorprotocol {
     
     public typealias Element = SortedDictionary<K,P,V>.KeyValue
     
-    public var reversed: Bool {
-        return _reversed
-    }
-    
-    public var index: Int {
-        return _index
-    }
-
-    var _node: Element?
-    var _reversed: Bool
-    var _index: Int
+    private let _nextFn: () -> Element?
 
     fileprivate init(tree: AvlTree<K,P,V>, reversed: Bool = false) {
-        self._reversed = reversed
-        self._index = -1
-        self._node = reversed ? tree.last() : tree.first()
+        if reversed {
+            var node = tree.last()
+            self._nextFn = {
+                if let n = node {
+                    node = n.prev()
+                    return n
+                }
+                return nil
+            }
+        } else {
+            var node = tree.first()        
+            self._nextFn = {
+                if let n = node {
+                    node = n.next()
+                    return n
+                }
+                return nil
+            }
+        }
     }
-    
+
+    @inline(__always)    
     public func next() -> Element? {
-        let nnode = _node
-        _node = _reversed ? nnode?.prev() : nnode?.next()
-        _index += 1
-        return nnode
+        return _nextFn()
     }
 }
