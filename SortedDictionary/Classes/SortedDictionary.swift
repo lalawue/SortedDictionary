@@ -40,7 +40,7 @@ open class SortedDictionary<K:Hashable, P:Comparable, V> {
         self.sortedFn = sorted
     }
     
-    /// get/set
+    /// get / set value with Key
     open subscript(_ key: K) -> V? {
         get {
             return map[key]?.value
@@ -53,7 +53,7 @@ open class SortedDictionary<K:Hashable, P:Comparable, V> {
                         node.replace(value: newValue)
                     } else {
                         tree.remove(node: node)
-                        map[key] = tree.insert(key: key, value: newValue, priority: npri)
+                        tree.insert(key: key, value: newValue, priority: npri, freeNode: node)
                     }
                 } else {
                     map[key] = tree.insert(key: key, value: newValue, priority: npri)
@@ -66,14 +66,20 @@ open class SortedDictionary<K:Hashable, P:Comparable, V> {
             }
         }
     }
+    
+    /// get KeyValue base on priority, custom compareFn for matching
+    /// - compareFn: return -1, 0, 1 for priority less then, equal to or greater than KeyValue
+    open func match(priority: P, compareFn: (P, KeyValue) -> Int) -> KeyValue? {
+        return tree.match(priority: priority, compareFn: compareFn)
+    }
 
-    /// forEach with index from '0'
-    /// - reversed: true from last
-    /// - body() return true to stop looping
+    /// forEach with index range 0 -> count -1
+    /// - reversed: true from last, and index range count -1 -> 0
+    /// - body() return true to stop looping, and index range [0, count -1] from 0 when reversed false
     open func forEach(reversed: Bool = false, _ body: (Int, KeyValue) throws -> Bool) rethrows {
         let it = makeIterator(reversed: reversed)
+        let step = reversed ? -1 : 1
         var index = reversed ? tree.count() : -1
-        var step = reversed ? -1 : 1
         while let n = it.next() {
             index += step
             if try body(index, n) {
@@ -112,14 +118,6 @@ open class SortedDictionary<K:Hashable, P:Comparable, V> {
         return array
     }
 
-    /// match node base on compare function
-    /// - compareFn: return -1, 0, 1 for priority less then, equal to, greater than node
-    open func match(priority: P, compareFn: (priority: P, node: AvlNode<K,P,V>) -> Int)
-        -> AvlNode<K,P,V>?
-    {
-        return tree.match(priority: priority, compareFn: compareFn)
-    }
-    
     /// create iterator
     /// - reversed: true from last
     open func makeIterator(reversed: Bool = false) -> SortedDictionaryIterator<K,P,V> {
@@ -134,7 +132,7 @@ open class SortedDictionary<K:Hashable, P:Comparable, V> {
 }
 
 /// sorted dictionary iterator
-public class SortedDictionaryIterator<K:Hashable, P:Comparable, V>: Iteratorprotocol {
+public class SortedDictionaryIterator<K:Hashable, P:Comparable, V>: IteratorProtocol {
     
     public typealias Element = SortedDictionary<K,P,V>.KeyValue
     

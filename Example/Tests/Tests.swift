@@ -101,7 +101,7 @@ class MyTest {
     }
 }
 
-// MARK: -
+// MARK: - Start Testing
 
 class Tests: XCTestCase {
     
@@ -170,7 +170,7 @@ class Tests: XCTestCase {
                 XCTAssertEqual(n.value, index)
             }
         }
-        
+
         do {
             let li = dict.makeIterator(reversed: true)
             var index = Decimal(10001)
@@ -179,11 +179,11 @@ class Tests: XCTestCase {
                 XCTAssertEqual(n.value, index)
             }
         }
-        
+
         do {
             var array = [SortedDictionary<String,Decimal,Decimal>.KeyValue]()
             let ff = dict.makeIterator(reversed: true)
-            var count = 0
+            var count = -1
             while let n = ff.next() {
                 count += 1
                 if count >= 5000 {
@@ -195,18 +195,18 @@ class Tests: XCTestCase {
             XCTAssertEqual(array.first!.value, 10000)
             XCTAssertEqual(array.last!.value, 5001)
         }
-        
+
         do {
             dict.forEach(reversed: true, { index, kv in
-                XCTAssertEqual(kv.value, index)
+                XCTAssertEqual(kv.value, Decimal(index + 1))
                 return false
             })
         }
 
         do {
             let n = dict.match(priority: 8000.5, compareFn: { priority, node in
-                let v = floor(priority)
-                return v - node.priority
+                let v = Decimal(floor((priority as NSDecimalNumber).doubleValue ))
+                return ((v - node.priority) as NSDecimalNumber).intValue
             })
             XCTAssertEqual(n?.value ?? 0, 8000)
         }

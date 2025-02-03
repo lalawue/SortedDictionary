@@ -5,35 +5,49 @@
 
 /// AVL tree node
 public class AvlNode<K:Hashable, P:Comparable, V> {
-    fileprivate var left: AvlNode<K,P,V>? = nil
-    fileprivate var right: AvlNode<K,P,V>? = nil
-    fileprivate weak var parent: AvlNode<K,P,V>? = nil
-    fileprivate var height: Int = 0
-    fileprivate var val: V
+    fileprivate(set) var left: AvlNode<K,P,V>? = nil
+    fileprivate(set) var right: AvlNode<K,P,V>? = nil
+    fileprivate(set) weak var parent: AvlNode<K,P,V>? = nil
+    fileprivate(set) var height: Int = 0
+    
+    private var _key: K
+    private var _value: V
+    private var _priority: P
     
     /// dictionary key
-    public let key: K
-    
+    @inline(__always)
+    public var key: K {
+        _key
+    }
+
     /// dictionary value
+    @inline(__always)
     public var value: V {
-        return val
+        _value
     }
     
     /// sorted key
-    public let priority: P
+    @inline(__always)
+    public var priority: P {
+        _priority        
+    }
     
     fileprivate init(key: K, value: V, priority: P) {
-        self.key = key
-        self.priority = priority
-        self.val = value
+        _key = key
+        _value = value
+        _priority = priority
     }
     
     public static func ==(lhs: AvlNode<K,P,V>, rhs: AvlNode<K,P,V>) -> Bool {
-        return lhs.priority == rhs.priority
+        return lhs._priority == rhs._priority
     }
-    
-    func replace(value: V) {
-        val = value
+
+    @discardableResult
+    func replace(key: K? = nil, value: V? = nil, priority: P? = nil) -> Self {
+        _key = key ?? _key
+        _value = value ?? _value
+        _priority = priority ?? _priority
+        return self
     }
     
     /// next node
@@ -86,13 +100,13 @@ public class AvlNode<K:Hashable, P:Comparable, V> {
 /// AVL tree, which first is minimal, and last is maximal
 class AvlTree<K:Hashable, P:Comparable, V> {
     
-    private var root: AvlNode<K,P,V>?
+    private var _root: AvlNode<K,P,V>?
 
-    private var size = Int(0)
+    private var _count = Int(0)
     
     /// minimal
     func first() -> AvlNode<K,P,V>? {
-        guard var node = root else {
+        guard var node = _root else {
             return nil
         }
         while let nl = node.left {
@@ -103,7 +117,7 @@ class AvlTree<K:Hashable, P:Comparable, V> {
     
     /// maximal
     func last() -> AvlNode<K,P,V>? {
-        guard var node = root else {
+        guard var node = _root else {
             return nil
         }
         while let nr = node.right {
@@ -114,46 +128,48 @@ class AvlTree<K:Hashable, P:Comparable, V> {
     
     /// replace original
     @discardableResult
-    func insert(key: K, value: V, priority: P) -> AvlNode<K,P,V> {
-        var link = root
+    func insert(key: K, value: V, priority: P, freeNode: AvlNode<K,P,V>? = nil) -> AvlNode<K,P,V> {
+        var link = _root
         var parent: AvlNode<K,P,V>? = nil
-        var left = false
+        var is_left = false
         while let _link = link {
             parent = _link
             if _link.priority == priority {
-                _link.val = value
+                _link.replace(value: value)
                 return _link
             }
-            left = _link.priority > priority
-            if left {
+            is_left = _link.priority > priority
+            if is_left {
                 link = _link.left
             } else {
                 link = _link.right
             }
         }
-        let node = AvlNode(key: key, value: value, priority: priority)
+        let node = freeNode?.replace(key: key, value: value, priority: priority) ??
+            AvlNode(key: key, value: value, priority: priority)
         node.parent = parent
         if let np = parent {
-            if left {
+            if is_left {
                 np.left = node
             } else {
                 np.right = node
             }
         } else {
-            root = node
+            _root = node
         }
         postInsert(node: node)
-        size += 1
+        _count += 1
         return node
     }
     
     @discardableResult
     func remove(node: AvlNode<K,P,V>) -> V? {
-        let value = node.val
+        let value = node.value
         var child: AvlNode<K,P,V>? = nil
         var parent: AvlNode<K,P,V>? = nil
         if let nl = node.left, let nr = node.right {
             let old = node
+            var _ = nl
             var n = nr
             while let _n = n.left {
                 n = _n
@@ -191,17 +207,15 @@ class AvlTree<K:Hashable, P:Comparable, V> {
         if let np = parent {
             reBalance(node: np)
         }
-        size -= 1
+        _count -= 1
         return value
     }
 
-    func match(priority: P, compareFn: (priority: P, node: AvlNode<K,P,V>) -> Int)
-        -> AvlNode<K,P,V>?
-    {
-        guard self.size > 0 else {
+    func match(priority: P, compareFn: (P, AvlNode<K,P,V>) -> Int) -> AvlNode<K,P,V>? {
+        guard _count > 0 else {
             return nil
         }
-        var _match: AvlNode<K,P,V>? = root
+        var _match: AvlNode<K,P,V>? = _root
         while let n = _match {
             let ret = compareFn(priority, n)
             if ret == 0 {
@@ -216,12 +230,12 @@ class AvlTree<K:Hashable, P:Comparable, V> {
     }
     
     func clear() {
-        root = nil
-        size = 0
+        _root = nil
+        _count = 0
     }
     
     func count() -> Int {
-        return size
+        return _count
     }
 }
 
@@ -238,7 +252,7 @@ extension AvlTree {
     
     private func replaceChild(oldNode: AvlNode<K,P,V>, newNode: AvlNode<K,P,V>?, parent: AvlNode<K,P,V>?) {
         guard let `parent` = parent else {
-            root = newNode
+            _root = newNode
             return
         }
         if let pl = parent.left, pl == oldNode {
@@ -314,7 +328,7 @@ extension AvlTree {
     
     private func reBalance(node: AvlNode<K,P,V>?) {
         var next = node
-        while let n = next {
+        while var n = next {
             let h0 = leftHeight(node: n)
             let h1 = rightHeight(node: n)
             let diff = h0 - h1
@@ -325,11 +339,11 @@ extension AvlTree {
                 break
             }
             if diff <= -2 {
-                next = fixLeft(node: n)
+                n = fixLeft(node: n)
             } else if diff >= 2 {
-                next = fixRight(node: n)
+                n = fixRight(node: n)
             }
-            next = next?.parent
+            next = n.parent
         }
     }
     
